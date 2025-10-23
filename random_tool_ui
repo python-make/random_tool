@@ -163,10 +163,10 @@ def save_get_list():
 #UI用の保存した位置をオブジェクトにセットする関数
 def save_set_list():
     sel = cmds.ls(selection=True)
-    pos = positions.value
-    for obj in sel:
-        pos = positions.value
-        cmds.xform(obj, worldSpace=True, translation=pos)
+    pos_value = positions.values()
+    for pos in pos_value:
+        new_pos = [pos[0], pos[1], pos[2]]
+        cmds.xform(sel, worldSpace=True, translation=new_pos)
 
 #最初の位置を保存し、返す関数
 def multi_get_list():
