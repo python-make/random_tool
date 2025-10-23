@@ -9,7 +9,7 @@ def transform_obj():
     sel = cmds.ls(selection=True, type="transform")
     return sel
     
-"""===================================================="""
+"""================================================================================================"""
 ##UIの作成
 def poly_check_tool_ui():
     #同名削除
@@ -97,7 +97,7 @@ def poly_check_tool_ui():
     z_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
     cmds.setParent("..")
     cmds.button(label="apply", command=lambda *_:check_box_random_int())
-    # ----------------------------------------------------
+    """====================================================================================================="""
     
     #完了のプログレスバー作成
     global progress
@@ -141,7 +141,7 @@ def get_select_forcus():
         cmds.isolateSelect(panel, state=True)
         cmds.isolateSelect(panel, addSelected=True)
         
-# --- #チェックボックスの値を取得 -------------------------------------------------
+# --- #チェックボックスの値を取得し、設定した値の中でランダムに配置する -------------------------------------------------
 
 #最初の位置を保存しておく関数
 def save_get_list():
@@ -150,10 +150,10 @@ def save_get_list():
     for obj in sel:
         pos = cmds.xform(obj, query=True, worldSpace=True, translation=True)
         positions[obj] = pos
-    return positions
-        
-#選択したオブジェクトの位置を記録
-saved_pos = save_get_list()
+    #選択したオブジェクトの位置を記録
+    saved_pos = save_get_list()
+    
+    cmds.xform(obj, worldSpace=True, translation=save_pos)
     
 def check_box_random_int():
     sel = transform_obj()
@@ -184,20 +184,48 @@ def check_box_random_int():
         cmds.warning("最小値が最大値を超えています。")
         return
         
+    #それぞれの軸に合わせたランダム処理
     if cmds.checkBox(x_checkbox, query=True, value=True):
         for num in sel:
-            current_pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
-            first_pos = saved_pos[obj]
+            
+            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
             
             #ランダムの範囲を決める
             x_random = random.randint(x_min_val,x_max_val)
             
-            #もし選択したオブジェクトの位置が動いていたら、元の位置に戻す
-            if current_pos[0] != first_pos[0]:
-                cmds.xform(num, worldSpace=True, translation=first_pos)
+            #もし選択したオブジェクトの位置が保存した位置なら、
+            if pos[0] == multi_get_list():
+                cmds.xform(num, worldSpace=True, translation=multi_get_list())
             else:
-                cmds.xform(num, worldSpace=True, translation=[x_random,current_pos[1], current_pos[2]])
-
+                cmds.xform(num, worldSpace=True, translation=[x_random,pos[1], pos[2]])
+                
+    if cmds.checkBox(y_checkbox, query=True, value=True):
+        for num in sel:
+            
+            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
+            
+            #ランダムの範囲を決める
+            y_random = random.randint(y_min_val,y_max_val)
+            
+            #もし選択したオブジェクトの位置が保存した位置なら、
+            if pos[0] == multi_get_list():
+                cmds.xform(num, worldSpace=True, translation=multi_get_list())
+            else:
+                cmds.xform(num, worldSpace=True, translation=[pos[0],y_random, pos[2]])
+                
+    if cmds.checkBox(z_checkbox, query=True, value=True):
+        for num in sel:
+            
+            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
+            
+            #ランダムの範囲を決める
+            z_random = random.randint(z_min_val,z_max_val)
+            
+            #もし選択したオブジェクトの位置が保存した位置なら、
+            if pos[0] == multi_get_list():
+                cmds.xform(num, worldSpace=True, translation=multi_get_list())
+            else:
+                cmds.xform(num, worldSpace=True, translation=[pos[0],pos[1], z_random])
 # --- 特定のフェースを取得 -------------------------------------------------
 def append_sel_face():
     cmds.progressBar(progress, edit=True, progress=0)
