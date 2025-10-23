@@ -68,7 +68,6 @@ def poly_check_tool_ui():
     cmds.text(label="最大")
     x_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
     cmds.setParent("..")
-    cmds.button(label="apply", command=lambda *_:check_box_random_int())
     
     #ランダム入力 y軸
     cmds.rowLayout(
@@ -82,7 +81,6 @@ def poly_check_tool_ui():
     cmds.text(label="最大")
     y_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
     cmds.setParent("..")
-    cmds.button(label="apply", command=lambda *_:check_box_random_int())
     
     #ランダム入力 z軸
     cmds.rowLayout(
@@ -96,7 +94,16 @@ def poly_check_tool_ui():
     cmds.text(label="最大")
     z_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
     cmds.setParent("..")
+    #実行ボタン
+    cmds.rowLayout(
+        numberOfColumns=3,
+        columnAlign=(1, "right"),
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0)]
+        )
     cmds.button(label="apply", command=lambda *_:check_box_random_int())
+    cmds.button(label="set", command=lambda *_:save_set_list())
+    cmds.button(label="reset", command=lambda *_:save_get_list())
+    cmds.setParent("..")
     """====================================================================================================="""
     
     #完了のプログレスバー作成
@@ -143,18 +150,33 @@ def get_select_forcus():
         
 # --- #チェックボックスの値を取得し、設定した値の中でランダムに配置する -------------------------------------------------
 
-#最初の位置を保存しておく関数
+#UI用の位置を保存する関数
 def save_get_list():
+    sel = cmds.ls(selection=True)
+    global positions
+    positions = {}
+    for obj in sel:
+        pos = cmds.xform(obj, query=True, worldSpace=True, translation=True)
+        positions[obj] = pos
+        return positions
+        
+#UI用の保存した位置をオブジェクトにセットする関数
+def save_set_list():
+    sel = cmds.ls(selection=True)
+    pos = positions.value
+    for obj in sel:
+        pos = positions.value
+        cmds.xform(obj, worldSpace=True, translation=pos)
+
+#最初の位置を保存し、返す関数
+def multi_get_list():
     sel = transform_obj()
     positions = {}
     for obj in sel:
         pos = cmds.xform(obj, query=True, worldSpace=True, translation=True)
         positions[obj] = pos
-    #選択したオブジェクトの位置を記録
-    saved_pos = save_get_list()
-    
-    cmds.xform(obj, worldSpace=True, translation=save_pos)
-    
+    return positions
+
 def check_box_random_int():
     sel = transform_obj()
     
