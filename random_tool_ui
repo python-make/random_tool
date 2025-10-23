@@ -101,8 +101,8 @@ def poly_check_tool_ui():
         columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0)]
         )
     cmds.button(label="apply", command=lambda *_:check_box_random_int())
-    cmds.button(label="set", command=lambda *_:save_set_list())
-    cmds.button(label="reset", command=lambda *_:save_get_list())
+    cmds.button(label="set", command=lambda *_:save_get_list())
+    cmds.button(label="reset", command=lambda *_:current_pos_set_list())
     cmds.setParent("..")
     """====================================================================================================="""
     
@@ -161,12 +161,11 @@ def save_get_list():
         return positions
         
 #UI用の保存した位置をオブジェクトにセットする関数
-def save_set_list():
+def current_pos_set_list():
     sel = cmds.ls(selection=True)
-    pos_value = positions.values()
-    for pos in pos_value:
-        new_pos = [pos[0], pos[1], pos[2]]
-        cmds.xform(sel, worldSpace=True, translation=new_pos)
+    for obj in sel:
+        if obj in positions:
+            cmds.xform(obj, worldSpace=True, translation=positions[obj])
 
 #最初の位置を保存し、返す関数
 def multi_get_list():
