@@ -1,0 +1,230 @@
+import maya.cmds as cmds
+import random
+
+#メッシュ取得
+def sel_obj():
+    sel = cmds.ls(type="mesh")
+    return sel
+def transform_obj():
+    sel = cmds.ls(selection=True, type="transform")
+    return sel
+    
+"""===================================================="""
+##UIの作成
+def poly_check_tool_ui():
+    #同名削除
+    if cmds.window("check_tool", exists=True):
+        cmds.deleteUI("check_tool")
+
+    #ウィンドウ作成
+    window = cmds.window("check_tool", title="check tool", widthHeight=(300,200))
+    
+    #レイアウト作成
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=10, columnAlign="center")
+    
+    # --- スクロールリスト生成 -------------------------------------------------
+
+    #編集可能なスクロールリスト
+    global sel_list
+    sel_list = cmds.textScrollList(allowMultiSelection=True, numberOfRows=8)
+    
+    #入力できるフィールド
+    cmds.rowLayout(
+        numberOfColumns=6,
+        columnAlign=(1,"left"),
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0), (5, "both", 0), (6, "both", 0)]
+        )
+    
+    cmds.text(label="入力:")
+    
+    #編集できる入力欄(ポリゴン入力用)
+    global i_field
+    i_field = cmds.intField(value=1,minValue=0, maxValue=100000, step=1, editable=True)
+    
+    cmds.text(label="以上")
+    #スクロールリストにオブジェクトを取得、選択できるボタン
+    cmds.button(label="get", command=lambda *_:append_sel_face())
+    cmds.button(label="select", command=lambda *_:get_select())
+    cmds.button(label="iso", command=lambda *_:get_select_forcus())
+    cmds.setParent("..")
+    
+    cmds.separator(style="in")
+    
+    # --- チェックボックス生成 ------------------------------------------------
+    global x_checkbox, y_checkbox, z_checkbox
+    x_checkbox = cmds.checkBox(label="X軸", value=True)
+    y_checkbox = cmds.checkBox(label="Y軸", value=True)
+    z_checkbox = cmds.checkBox(label="Z軸", value=True)
+    
+    #ランダム入力 x軸
+    cmds.rowLayout(
+        numberOfColumns=4,
+        columnAlign=(1, "right"),
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
+        )
+    global x_min_field, x_max_field
+    cmds.text(label="最小")
+    x_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.text(label="最大")
+    x_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.setParent("..")
+    cmds.button(label="apply", command=lambda *_:check_box_random_int())
+    
+    #ランダム入力 y軸
+    cmds.rowLayout(
+        numberOfColumns=4,
+        columnAlign=(1, "right"),
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
+        )
+    global y_min_field, y_max_field
+    cmds.text(label="最小")
+    y_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.text(label="最大")
+    y_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.setParent("..")
+    cmds.button(label="apply", command=lambda *_:check_box_random_int())
+    
+    #ランダム入力 z軸
+    cmds.rowLayout(
+        numberOfColumns=4,
+        columnAlign=(1, "right"),
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
+        )
+    global z_min_field, z_max_field
+    cmds.text(label="最小")
+    z_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.text(label="最大")
+    z_max_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
+    cmds.setParent("..")
+    cmds.button(label="apply", command=lambda *_:check_box_random_int())
+    # ----------------------------------------------------
+    
+    #完了のプログレスバー作成
+    global progress
+    progress = cmds.progressBar(maxValue=1, width=300)
+    
+    #ウィンドウ表示
+    cmds.showWindow(window)
+    
+    
+# --- スクロールリストから選択できるようにする -------------------------------------------------
+def get_select():
+    select_items = cmds.textScrollList(sel_list, query=True, selectItem=True)
+    if select_items:
+        cmds.select(select_items)
+    else:
+        cmds.warning("リストから選択してください。")
+
+# --- スクロールリストからフォーカスできるようにする -------------------------------------------------
+def get_select_forcus():
+    selected = cmds.textScrollList(sel_list, q=True, selectItem=True)
+    if not selected:
+        cmds.warning("スクロールリストからオブジェクトを選択してください。")
+        return
+
+    cmds.select(selected)
+
+    # 固定パネルを使う
+    panel = cmds.getPanel(withFocus=True)
+    
+    if not cmds.getPanel(typeOf=panel) == "modelPanel":
+        panel = "modelPanel4"
+
+    state = cmds.isolateSelect(panel, query=True, state=True)
+
+    if state:
+        # すでに isolate 中なら解除
+        cmds.isolateSelect(panel, state=False)
+    else:
+        # isolate OFF → ON にして選択だけ表示
+        cmds.isolateSelect(panel, state=False)
+        cmds.isolateSelect(panel, state=True)
+        cmds.isolateSelect(panel, addSelected=True)
+        
+# --- #チェックボックスの値を取得 -------------------------------------------------
+
+#最初の位置を保存しておく関数
+def save_get_list():
+    sel = transform_obj()
+    positions = {}
+    for obj in sel:
+        pos = cmds.xform(obj, query=True, worldSpace=True, translation=True)
+        positions[obj] = pos
+    return positions
+        
+#選択したオブジェクトの位置を記録
+saved_pos = save_get_list()
+    
+def check_box_random_int():
+    sel = transform_obj()
+    
+    if len(sel) < 2:
+        cmds.warning("オブジェクトを2つ以上選択してください。")
+        return
+    #x軸のintフィールド
+    x_min_val = cmds.intField(x_min_field, query=True, value=True)
+    x_max_val = cmds.intField(x_max_field, query=True, value=True)
+    #y軸のintフィールド
+    y_min_val = cmds.intField(y_min_field, query=True, value=True)
+    y_max_val = cmds.intField(y_max_field, query=True, value=True)
+    #z軸のintフィールド
+    z_min_val = cmds.intField(z_min_field, query=True, value=True)
+    z_max_val = cmds.intField(z_max_field, query=True, value=True)
+    
+    #最小値が最大値を超えていた時のエラーメッセージ
+    if x_max_val < x_min_val:
+        cmds.warning("最小値が最大値を超えています。")
+        return
+        
+    if y_max_val < y_min_val:
+        cmds.warning("最小値が最大値を超えています。")
+        return
+    
+    if z_max_val < z_min_val:
+        cmds.warning("最小値が最大値を超えています。")
+        return
+        
+    if cmds.checkBox(x_checkbox, query=True, value=True):
+        for num in sel:
+            current_pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
+            first_pos = saved_pos[obj]
+            
+            #ランダムの範囲を決める
+            x_random = random.randint(x_min_val,x_max_val)
+            
+            #もし選択したオブジェクトの位置が動いていたら、元の位置に戻す
+            if current_pos[0] != first_pos[0]:
+                cmds.xform(num, worldSpace=True, translation=first_pos)
+            else:
+                cmds.xform(num, worldSpace=True, translation=[x_random,current_pos[1], current_pos[2]])
+
+# --- 特定のフェースを取得 -------------------------------------------------
+def append_sel_face():
+    cmds.progressBar(progress, edit=True, progress=0)
+    sel = sel_obj()
+    
+    if not sel:
+        cmds.warning("シーン内にオブジェクトがありません。")
+        return
+        
+    cmds.textScrollList(sel_list, edit=True, removeAll=True)
+    
+    #入力フィールドの値を読み取る
+    field_value = cmds.intField(i_field, query=True,value=True)
+        
+    for obj in sel:
+        face_count = cmds.polyEvaluate(obj, face=True)
+        found = False
+        if face_count >= field_value:
+           parent = cmds.listRelatives(obj, parent=True)[0]
+           cmds.textScrollList(sel_list, edit=True, append=parent)
+           cmds.progressBar(progress,edit=True, step=1)
+           cmds.refresh()
+           found = True
+           
+    if not found:
+        cmds.textScrollList(sel_list, edit=True, append=["<no objects>"])
+    
+
+#実行
+poly_check_tool_ui()
