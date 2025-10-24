@@ -17,7 +17,7 @@ def poly_check_tool_ui():
         cmds.deleteUI("check_tool")
 
     #ウィンドウ作成
-    window = cmds.window("check_tool", title="check tool", widthHeight=(300,200))
+    window = cmds.window("check_tool", title="check tool", widthHeight=(300,500))
     
     #レイアウト作成
     cmds.columnLayout(adjustableColumn=True, rowSpacing=10, columnAlign="center")
@@ -51,14 +51,49 @@ def poly_check_tool_ui():
     cmds.separator(style="in")
     
     # --- チェックボックス生成 ------------------------------------------------
-    global x_checkbox, y_checkbox, z_checkbox
-    x_checkbox = cmds.checkBox(label="X軸", value=True)
-    y_checkbox = cmds.checkBox(label="Y軸", value=True)
-    z_checkbox = cmds.checkBox(label="Z軸", value=True)
-    
-    #ランダム入力 x軸
+    #ｘ軸のチェックボックス、移動
+    cmds.frameLayout(label="attribute", labelAlign="left", collapsable=True, bgc=(0.32, 0.32, 0.32), )
+    cmds.columnLayout(adjustableColumn=True)
     cmds.rowLayout(
-        numberOfColumns=4,
+            numberOfColumns=2,
+            columnAlign=(1, "right"),
+            columnAttach=[(1, "both", 0), (2, "both", 0)]
+        )
+    global x_checkbox, transforms
+    x_checkbox = cmds.checkBox(label="X軸", value=True)
+    transforms = cmds.checkBox(label="移動", value=True)
+    cmds.setParent("..")
+    
+    #ｙ軸のチェックボックス、回転
+    cmds.columnLayout(adjustableColumn=True)
+    cmds.rowLayout(
+            numberOfColumns=2,
+            columnAlign=(1, "right"),
+            columnAttach=[(1, "both", 0), (2, "both", 0)]
+        )
+    global y_checkbox, rotates
+    y_checkbox = cmds.checkBox(label="Y軸", value=True)
+    rotates = cmds.checkBox(label="回転", value=False)
+    cmds.setParent("..")
+
+    #ｙ軸のチェックボックス、回転
+    cmds.columnLayout(adjustableColumn=True)
+    cmds.rowLayout(
+            numberOfColumns=2,
+            columnAlign=(1, "right"),
+            columnAttach=[(1, "both", 0), (2, "both", 0)]
+        )
+    global z_checkbox, scales
+    z_checkbox = cmds.checkBox(label="Z軸", value=True)
+    scales = cmds.checkBox(label="スケール", value=False)
+    cmds.setParent("..")
+    
+    cmds.setParent("..")
+    cmds.separator(style="in")
+    #ランダム入力 x軸
+    cmds.text(label="-----X軸-----", align="center")
+    cmds.rowLayout(
+        numberOfColumns=5,
         columnAlign=(1, "right"),
         columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
         )
@@ -70,6 +105,7 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     #ランダム入力 y軸
+    cmds.text(label="-----Y軸-----", align="center")
     cmds.rowLayout(
         numberOfColumns=4,
         columnAlign=(1, "right"),
@@ -83,6 +119,7 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     #ランダム入力 z軸
+    cmds.text(label="-----Z軸-----", align="center")
     cmds.rowLayout(
         numberOfColumns=4,
         columnAlign=(1, "right"),
@@ -101,8 +138,7 @@ def poly_check_tool_ui():
         columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0)]
         )
     cmds.button(label="apply", command=lambda *_:check_box_random_int())
-    cmds.button(label="set", command=lambda *_:save_get_list())
-    cmds.button(label="reset", command=lambda *_:current_pos_set_list())
+    cmds.button(label="undo", command=lambda *_:cmds.undo())
     cmds.setParent("..")
     """====================================================================================================="""
     
@@ -149,7 +185,7 @@ def get_select_forcus():
         cmds.isolateSelect(panel, addSelected=True)
         
 # --- #チェックボックスの値を取得し、設定した値の中でランダムに配置する -------------------------------------------------
-
+"""========================================
 #UI用の位置を保存する関数
 def save_get_list():
     sel = cmds.ls(selection=True)
@@ -165,7 +201,7 @@ def current_pos_set_list():
     sel = cmds.ls(selection=True)
     for obj in sel:
         if obj in positions:
-            cmds.xform(obj, worldSpace=True, translation=positions[obj])
+            cmds.xform(obj, worldSpace=True, translation=positions[obj])"""
 
 #最初の位置を保存し、返す関数
 def multi_get_list():
@@ -207,46 +243,130 @@ def check_box_random_int():
         
     #それぞれの軸に合わせたランダム処理
     if cmds.checkBox(x_checkbox, query=True, value=True):
-        for num in sel:
-            
-            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
-            
-            #ランダムの範囲を決める
-            x_random = random.randint(x_min_val,x_max_val)
-            
-            #もし選択したオブジェクトの位置が保存した位置なら、
-            if pos[0] == multi_get_list():
-                cmds.xform(num, worldSpace=True, translation=multi_get_list())
-            else:
-                cmds.xform(num, worldSpace=True, translation=[x_random,pos[1], pos[2]])
+        #チェックボックスの移動がオンなら
+        if cmds.checkBox(transforms, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
+                
+                #ランダムの範囲を決める
+                x_random = random.randint(x_min_val,x_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, translation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, translation=[x_random,pos[1], pos[2]])
+        #チェックボックスの回転がオンなら    
+        if cmds.checkBox(rotates, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, rotation=True)
+                
+                #ランダムの範囲を決める
+                x_random = random.randint(x_min_val,x_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, rotation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, rotation=[x_random,pos[1], pos[2]])
+                    
+        if cmds.checkBox(scales, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, scale=True)
+                
+                #ランダムの範囲を決める
+                x_random = random.randint(x_min_val,x_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, scale=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, scale=[x_random,pos[1], pos[2]])
                 
     if cmds.checkBox(y_checkbox, query=True, value=True):
-        for num in sel:
-            
-            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
-            
-            #ランダムの範囲を決める
-            y_random = random.randint(y_min_val,y_max_val)
-            
-            #もし選択したオブジェクトの位置が保存した位置なら、
-            if pos[0] == multi_get_list():
-                cmds.xform(num, worldSpace=True, translation=multi_get_list())
-            else:
-                cmds.xform(num, worldSpace=True, translation=[pos[0],y_random, pos[2]])
+        if cmds.checkBox(transforms, query=True, value=True):
+            for num in sel:    
+                pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
                 
+                #ランダムの範囲を決める
+                y_random = random.randint(y_min_val,y_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, translation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, translation=[pos[0],y_random, pos[2]])
+
+        if cmds.checkBox(rotates, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, rotation=True)
+                
+                #ランダムの範囲を決める
+                y_random = random.randint(y_min_val,y_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, rotation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, rotation=[pos[0],y_random, pos[2]])
+                    
+        if cmds.checkBox(scales, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, scale=True)
+                
+                #ランダムの範囲を決める
+                y_random = random.randint(y_min_val,y_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, scale=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, scale=[pos[0],y_random, pos[2]])                
     if cmds.checkBox(z_checkbox, query=True, value=True):
-        for num in sel:
-            
-            pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
-            
-            #ランダムの範囲を決める
-            z_random = random.randint(z_min_val,z_max_val)
-            
-            #もし選択したオブジェクトの位置が保存した位置なら、
-            if pos[0] == multi_get_list():
-                cmds.xform(num, worldSpace=True, translation=multi_get_list())
-            else:
-                cmds.xform(num, worldSpace=True, translation=[pos[0],pos[1], z_random])
+        if cmds.checkBox(transforms, query=True, value=True):
+            for num in sel: 
+                pos = cmds.xform(num, query=True, worldSpace=True, translation=True)
+                
+                #ランダムの範囲を決める
+                z_random = random.randint(z_min_val,z_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, translation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, translation=[pos[0],pos[1], z_random])
+        if cmds.checkBox(rotates, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, rotation=True)
+                
+                #ランダムの範囲を決める
+                z_random = random.randint(z_min_val,z_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, rotation=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, rotation=[pos[0],pos[1], z_random])
+                    
+        if cmds.checkBox(scales, query=True, value=True):
+            for num in sel:
+                
+                pos = cmds.xform(num, query=True, worldSpace=True, scale=True)
+                
+                #ランダムの範囲を決める
+                z_random = random.randint(z_min_val,z_max_val)
+                
+                #もし選択したオブジェクトの位置が保存した位置なら、
+                if pos[0] == multi_get_list():
+                    cmds.xform(num, worldSpace=True, scale=multi_get_list())
+                else:
+                    cmds.xform(num, worldSpace=True, scale=[pos[0],pos[1], z_random])
 # --- 特定のフェースを取得 -------------------------------------------------
 def append_sel_face():
     cmds.progressBar(progress, edit=True, progress=0)
@@ -273,7 +393,6 @@ def append_sel_face():
            
     if not found:
         cmds.textScrollList(sel_list, edit=True, append=["<no objects>"])
-    
 
 #実行
 poly_check_tool_ui()
