@@ -13,11 +13,11 @@ def transform_obj():
 ##UIの作成
 def poly_check_tool_ui():
     #同名削除
-    if cmds.window("check_tool", exists=True):
-        cmds.deleteUI("check_tool")
+    if cmds.window("align_tool", exists=True):
+        cmds.deleteUI("align_tool")
 
     #ウィンドウ作成
-    window = cmds.window("check_tool", title="check tool", widthHeight=(300,500))
+    window = cmds.window("align_tool", title="random align tool", widthHeight=(400,500))
     
     #レイアウト作成
     cmds.columnLayout(adjustableColumn=True, rowSpacing=10, columnAlign="center")
@@ -65,7 +65,6 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     #ｙ軸のチェックボックス、回転
-    cmds.columnLayout(adjustableColumn=True)
     cmds.rowLayout(
             numberOfColumns=2,
             columnAlign=(1, "right"),
@@ -76,8 +75,7 @@ def poly_check_tool_ui():
     rotates = cmds.checkBox(label="回転", value=False)
     cmds.setParent("..")
 
-    #ｙ軸のチェックボックス、回転
-    cmds.columnLayout(adjustableColumn=True)
+    #z軸のチェックボックス、回転
     cmds.rowLayout(
             numberOfColumns=2,
             columnAlign=(1, "right"),
@@ -89,14 +87,16 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     cmds.setParent("..")
+    cmds.setParent("..")
+
     cmds.separator(style="in")
     #ランダム入力 x軸
-    cmds.text(label="-----X軸-----", align="center")
     cmds.rowLayout(
         numberOfColumns=5,
         columnAlign=(1, "right"),
         columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
         )
+    cmds.text(label="X:", align="center")
     global x_min_field, x_max_field
     cmds.text(label="最小")
     x_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
@@ -105,12 +105,12 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     #ランダム入力 y軸
-    cmds.text(label="-----Y軸-----", align="center")
     cmds.rowLayout(
-        numberOfColumns=4,
+        numberOfColumns=5,
         columnAlign=(1, "right"),
-        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0), (5, "both", 0)]
         )
+    cmds.text(label="Y:", align="center")
     global y_min_field, y_max_field
     cmds.text(label="最小")
     y_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
@@ -119,12 +119,12 @@ def poly_check_tool_ui():
     cmds.setParent("..")
     
     #ランダム入力 z軸
-    cmds.text(label="-----Z軸-----", align="center")
     cmds.rowLayout(
-        numberOfColumns=4,
+        numberOfColumns=5,
         columnAlign=(1, "right"),
-        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0)]
+        columnAttach=[(1, "both", 0), (2, "both", 0), (3, "both", 0), (4, "both", 0), (5, "both", 0)]
         )
+    cmds.text(label="Z:", align="center")
     global z_min_field, z_max_field
     cmds.text(label="最小")
     z_min_field = cmds.intField(value=0, maxValue=10000000, minValue=-10000000, step=1,editable=True)
@@ -140,11 +140,10 @@ def poly_check_tool_ui():
     cmds.button(label="apply", command=lambda *_:check_box_random_int())
     cmds.button(label="undo", command=lambda *_:cmds.undo())
     cmds.setParent("..")
+    cmds.setParent("..")  # ← columnLayoutから抜ける
+
     """====================================================================================================="""
     
-    #完了のプログレスバー作成
-    global progress
-    progress = cmds.progressBar(maxValue=1, width=300)
     
     #ウィンドウ表示
     cmds.showWindow(window)
@@ -369,7 +368,6 @@ def check_box_random_int():
                     cmds.xform(num, worldSpace=True, scale=[pos[0],pos[1], z_random])
 # --- 特定のフェースを取得 -------------------------------------------------
 def append_sel_face():
-    cmds.progressBar(progress, edit=True, progress=0)
     sel = sel_obj()
     
     if not sel:
@@ -387,8 +385,6 @@ def append_sel_face():
         if face_count >= field_value:
            parent = cmds.listRelatives(obj, parent=True)[0]
            cmds.textScrollList(sel_list, edit=True, append=parent)
-           cmds.progressBar(progress,edit=True, step=1)
-           cmds.refresh()
            found = True
            
     if not found:
